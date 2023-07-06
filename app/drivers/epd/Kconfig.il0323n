@@ -1,0 +1,7 @@
+
+config IL0323N
+	bool "IL0323 driver to use with HDL"
+	depends on SPI
+	depends on HEAP_MEM_POOL_SIZE != 0
+	help
+	  IL0323 driver to use with HDL.
