@@ -1,0 +1,17 @@
+identifier: hidergo_dcmk1_52833
+name: Disconnect MK1
+type: keyboard
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - usb_device
+  - ble
+  - ieee802154
+  - pwm
+  - watchdog
+  - counter
+  - gpio

@@ -1,0 +1,13 @@
+# hid:ergo Disconnect MK1 board configuration
+
+# Copyright (c) 2023 hid:ergo
+# SPDX-License-Identifier: MIT
+
+config BOARD_HIDERGO_DCMK1_LEFT
+	bool "hidergo_dcmk1"
+	depends on SOC_NRF52833_QIAA
+
+config BOARD_HIDERGO_DCMK1_RIGHT
+	bool "hidergo_dcmk1"
+	depends on SOC_NRF52833_QIAA
+

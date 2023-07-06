@@ -1,0 +1,9 @@
+file_format: "1"
+id: hidergo_dcmk1_52833
+name: Disconnect MK1
+type: board
+arch: arm
+outputs:
+  - usb
+  - ble
+url: https://github.com/hidergo/zmk

@@ -1,0 +1,81 @@
+#include "hidergo_dcmk1.dts"
+
+&default_transform {// The matrix transform for this board is 6 columns over because the left half is 6 columns wide according to the matrix.
+    col-offset = <7>;
+};
+
+/{
+
+    chosen {
+        zmk,mouse = &trackpad;
+    };
+
+    kscan0: kscan {
+        compatible = "zmk,kscan-gpio-matrix";
+        label = "KSCAN";
+        diode-direction = "col2row";
+
+        row-gpios
+        = <&gpio0 14 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)> // Row 0 from the schematic file
+        , <&gpio0 16 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)> // Row 1 from the schematic file
+        , <&gpio0 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)> // Row 2 from the schematic file
+        , <&gpio0 22 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)> // Row 3 from the schematic file
+        , <&gpio0 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)> // Row 4 from the schematic file
+        , <&gpio0 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)> // Row 5 from the schematic file
+
+
+        ;
+        //TODO: need to add col 6 and 7
+        col-gpios
+        = <&gpio0 29 GPIO_ACTIVE_HIGH> // Col 0 in the schematic
+        , <&gpio0 28 GPIO_ACTIVE_HIGH> // Col 1 in the schematic
+        , <&gpio0 30 GPIO_ACTIVE_HIGH> // Col 2 in the schematic
+        , <&gpio0 31 GPIO_ACTIVE_HIGH> // Col 3 in the schematic
+        , <&gpio0 27 GPIO_ACTIVE_HIGH> // Col 4 in the schematic
+        , <&gpio0 4 GPIO_ACTIVE_HIGH> // Col 5 in the schematic
+        ;
+    };
+
+};
+ 
+&i2c0 {
+	compatible = "nordic,nrf-twi";
+	sda-pin = <17>;
+	scl-pin = <20>;
+
+	status = "okay";
+
+	trackpad: trackpad@74 {
+        compatible = "azoteq,iqs5xx";
+        label = "AZOTEQ_IQS5XX";
+        status = "okay";
+        reg = <0x74>;
+        dr-gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi1 {
+    status = "okay";
+    compatible = "nordic,nrf-spim";
+    sck-pin = <40>  ;
+    mosi-pin = <24>;
+    miso-pin = <23>;
+    cs-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+
+    epd: il0323n@0 {
+        compatible = "gooddisplay,il0323n";
+        reg = <0>;
+        label = "DISPLAY";
+        width = <80>;
+        height = <128>;
+        status = "okay";
+        spi-max-frequency = <8000000>;
+        dc-gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+        busy-gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+        reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+    };
+};
+
+&right_encoder {
+    status = "okay";
+};

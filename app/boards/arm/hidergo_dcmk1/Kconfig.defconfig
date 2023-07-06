@@ -1,0 +1,48 @@
+# Copyright (c) 2021 The ZMK Contributors
+# SPDX-License-Identifier: MIT
+
+if BOARD_HIDERGO_DCMK1_LEFT || BOARD_HIDERGO_DCMK1_RIGHT
+
+config BOARD
+	default "hidergo_dcmk1"
+
+config ZMK_KEYBOARD_NAME
+	default "Disconnect MK1"
+
+config USB_NRFX
+	default y
+
+config SPI
+	default y
+
+config IL0323
+	bool
+	default y
+
+# Enable UART driver, needed for CDC ACM
+config USB_CDC_ACM
+	default y
+
+config BT_CTLR
+	default BT
+
+config ZMK_BLE
+	default y
+
+config ZMK_USB
+	default y
+
+# FOR DEBUGGING
+config ZMK_LOG_LEVEL
+	int
+	default 1
+
+# FOR DEBUGGING
+config DISPLAY_LOG_LEVEL
+	int
+	default 1
+
+config BT_PERIPHERAL_PREF_LATENCY
+	default 15
+
+endif # BOARD_HIDERGO_DCMK1_LEFT || BOARD_HIDERGO_DCMK1_RIGHT
