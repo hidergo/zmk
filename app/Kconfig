@@ -553,6 +553,53 @@ config ZMK_KEYMAP_SENSORS_DEFAULT_TRIGGERS_PER_ROTATION
 
 endif # ZMK_KEYMAP_SENSORS
 
+menu "BoardPilot"
+
+config ZMK_BOARDPILOT
+    depends on USB
+    depends on ENABLE_HID_INT_OUT_EP
+    bool "Enable BoardPilot software interface"
+    default n
+
+if ZMK_BOARDPILOT
+
+config ZMK_BOARDPILOT_MAX_FIELD_SIZE
+    int "Maximum field size in bytes"
+    help
+        Maximum field size. This value must be larger than the largest
+        saveable field size.
+    default 1024
+
+config ZMK_BOARDPILOT_MAX_FIELDS
+    int "Maximum saveable fields"
+    help
+        Amount of field that can be written with BoardPilot.
+        For example: Keymap, sleep timer, datetime are single fields...
+    default 16
+
+config ZMK_BOARDPILOT_KEYMAP
+    bool "Enable keymap editing for boardpilot"
+    default y
+
+if ZMK_BOARDPILOT_KEYMAP
+
+config ZMK_BOARDPILOT_MAX_REBINDS
+    int "Maximum rebindable keys"
+    help
+      Less rebindable keys require less memory. Memory required in NVS 
+      can be calculated with ZMK_BOARDPILOT_MAX_REBINDS * 11B.
+      ZMK_BOARDPILOT_MAX_FIELD_SIZE must be larger than this value
+    default 64
+
+# ZMK_BOARDPILOT_KEYMAP
+endif
+
+# ZMK_BOARDPILOT
+endif
+
+# BoardPilot
+endmenu 
+
 choice CBPRINTF_IMPLEMENTATION
     default CBPRINTF_NANO
 

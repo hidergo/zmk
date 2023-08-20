@@ -26,6 +26,10 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/events/layer_state_changed.h>
 #include <zmk/events/sensor_event.h>
 
+// #if IS_ENABLED(ZMK_BOARDPILOT_KEYMAP)
+#include <zmk/boardpilot/boardpilot.h>
+// #endif
+
 static zmk_keymap_layers_state_t _zmk_keymap_layer_state = 0;
 static uint8_t _zmk_keymap_layer_default = 0;
 
@@ -68,8 +72,20 @@ static uint8_t _zmk_keymap_layer_default = 0;
 // still send the release event to the behavior in that layer also.
 static uint32_t zmk_keymap_active_behavior_layer[ZMK_KEYMAP_LEN];
 
+#if IS_ENABLED(CONFIG_ZMK_BOARDPILOT_KEYMAP)
+//  If BoardPilot is used, keymap must be saved in RAM
 static struct zmk_behavior_binding zmk_keymap[ZMK_KEYMAP_LAYERS_LEN][ZMK_KEYMAP_LEN] = {
     DT_INST_FOREACH_CHILD(0, TRANSFORMED_LAYER)};
+
+// List of changed keys
+static struct zmk_boardpilot_binding zmk_boardpilot_rebinds[CONFIG_ZMK_BOARDPILOT_MAX_REBINDS];
+// List of default keys
+static struct zmk_boardpilot_binding zmk_boardpilot_defaults[CONFIG_ZMK_BOARDPILOT_MAX_REBINDS];
+
+#else /* IS_ENABLED(CONFIG_ZMK_BOARDPILOT) */
+static struct zmk_behavior_binding zmk_keymap[ZMK_KEYMAP_LAYERS_LEN][ZMK_KEYMAP_LEN] = {
+    DT_INST_FOREACH_CHILD(0, TRANSFORMED_LAYER)};
+#endif
 
 static const char *zmk_keymap_layer_names[ZMK_KEYMAP_LAYERS_LEN] = {
     DT_INST_FOREACH_CHILD(0, LAYER_LABEL)};
@@ -326,9 +342,82 @@ int keymap_listener(const zmk_event_t *eh) {
     return -ENOTSUP;
 }
 
+#if IS_ENABLED(CONFIG_ZMK_BOARDPILOT_KEYMAP)
+void zmk_boardpilot_keymap_updated(struct zmk_boardpilot_field *field) {
+
+    // Reset defaults first
+    for (int i = 0; i < CONFIG_ZMK_BOARDPILOT_MAX_REBOUND_KEYS; i++) {
+        struct zmk_boardpilot_binding *item = &zmk_boardpilot_defaults[i];
+
+        if (item->key == 0xFFFF)
+            continue;
+
+        uint8_t layer = item->key & 0x0F;
+        uint16_t key = item->key >> 4;
+        if (layer >= ZMK_KEYMAP_LAYERS_LEN || key >= ZMK_KEYMAP_LEN)
+            continue;
+
+        struct zmk_behavior_binding *bind = &zmk_keymap[layer][i];
+        if (zmk_boardpilot_keymap_conf_to_binding(bind, item) < 0) {
+            LOG_ERR("Failed to update layer %i key %i: Unknown device id: %i\n", layer, key,
+                    item->device);
+        }
+    }
+
+    // Reset defaults
+    memset(zmk_boardpilot_defaults, 0xFF, sizeof(zmk_boardpilot_defaults));
+
+    for (int i = 0; i < CONFIG_ZMK_BOARDPILOT_MAX_REBOUND_KEYS; i++) {
+        struct zmk_config_keymap_item *item = &zmk_config_keymap[i];
+
+        if (item->key == 0xFFFF)
+            continue;
+
+        uint8_t layer = item->key & 0x0F;
+        uint16_t key = item->key >> 4;
+        if (layer >= ZMK_KEYMAP_LAYERS_LEN || key >= ZMK_KEYMAP_LEN)
+            continue;
+
+        struct zmk_behavior_binding *bind = &zmk_keymap[layer][i];
+
+        // Save default first
+        if (zmk_boardpilot_keymap_binding_to_conf(bind, &zmk_boardpilot_defaults[i], layer, key) <
+            0) {
+            LOG_ERR("Failed to save default binding");
+        }
+
+        if (zmk_boardpilot_keymap_conf_to_binding(bind, item) < 0) {
+            LOG_ERR("Failed to update layer %i key %i: Unknown device id: %i\n", layer, key,
+                    item->device);
+        }
+    }
+}
+
+static int zmk_boardpilot_keymap_init() {
+    // Initialize zmk_boardpilot_rebinds, defaults to 0xFF
+    memset(zmk_boardpilot_rebinds, 0xFF, sizeof(zmk_boardpilot_rebinds));
+    memset(zmk_boardpilot_defaults, 0xFF, sizeof(zmk_boardpilot_defaults));
+
+    // Load rebound keys
+    if (zmk_boardpilot_bind(ZMK_CONFIG_KEY_KEYMAP, zmk_boardpilot_rebinds,
+                            sizeof(zmk_boardpilot_rebinds), true, zmk_boardpilot_keymap_updated,
+                            NULL) == NULL) {
+        LOG_ERR("Failed to bind keymap");
+    }
+    // zmk_boardpilot_bind reads existing rebound keys from NVS so
+    // update must be triggered to update keymap
+    zmk_keymap_updated(NULL);
+    return 0;
+}
+#endif /* IS_ENABLED(CONFIG_ZMK_BOARDPILOT) */
+
 ZMK_LISTENER(keymap, keymap_listener);
 ZMK_SUBSCRIPTION(keymap, zmk_position_state_changed);
 
 #if ZMK_KEYMAP_HAS_SENSORS
 ZMK_SUBSCRIPTION(keymap, zmk_sensor_event);
 #endif /* ZMK_KEYMAP_HAS_SENSORS */
+
+#if IS_ENABLED(CONFIG_ZMK_BOARDPILOT)
+SYS_INIT(zmk_boardpilot_keymap_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+#endif /* IS_ENABLED(CONFIG_ZMK_BOARDPILOT) */
