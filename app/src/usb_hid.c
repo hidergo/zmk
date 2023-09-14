@@ -15,7 +15,7 @@
 #include <zmk/keymap.h>
 #include <zmk/event_manager.h>
 
-#if IS_ENABLED(CONFIG_BOARDPILOT)
+#if IS_ENABLED(CONFIG_ZMK_BOARDPILOT)
 #include <zmk/boardpilot/boardpilot.h>
 #endif
 
