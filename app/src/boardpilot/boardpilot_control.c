@@ -92,8 +92,8 @@ int zmk_boardpilot_get_config(uint8_t *buffer, uint16_t len) {
     // Maximum size is defined in request
     if (field->size > request->size) {
         // Invalid size
-        LOG_ERR("[boardpilot] Field 0x%04X size not correct! (%i received < %i defined)", request->key,
-                request->size, field->size);
+        LOG_ERR("[boardpilot] Field 0x%04X size not correct! (%i received < %i defined)",
+                request->key, request->size, field->size);
         return -1;
     }
 
@@ -104,7 +104,8 @@ int zmk_boardpilot_get_config(uint8_t *buffer, uint16_t len) {
         _zmk_boardpilot_input_buffer_size = 0;
     }
     // Allocate input buffer
-    _zmk_boardpilot_input_buffer_size = (sizeof(struct zmk_boardpilot_msg_get_config) - 1) + field->size;
+    _zmk_boardpilot_input_buffer_size =
+        (sizeof(struct zmk_boardpilot_msg_get_config) - 1) + field->size;
     _zmk_boardpilot_input_buffer = k_malloc(_zmk_boardpilot_input_buffer_size);
 
     if (_zmk_boardpilot_input_buffer == NULL) {
@@ -186,7 +187,7 @@ int zmk_boardpilot_get_config(uint8_t *buffer, uint16_t len) {
 
 int zmk_boardpilot_control_parse(const uint8_t *data, uint32_t len) {
     int err = 0;
-    
+
     if (chunk_recv_len == 0 && len < sizeof(struct zmk_boardpilot_msg_header)) {
         // Fail on too short message
         return -1;
@@ -195,7 +196,6 @@ int zmk_boardpilot_control_parse(const uint8_t *data, uint32_t len) {
     if (data_buffer_len == 0) {
         // First chunk, copy header to memory
         memcpy(&data_header, data, sizeof(struct zmk_boardpilot_msg_header));
-        LOG_ERR("RECV FIRST CHUNK (tl: %i)", data_header.size);
         if (data_header.report_id != 0x05) {
             // Report id must be 0x05
             LOG_ERR("INCORRECT REPORT ID");
@@ -231,8 +231,7 @@ int zmk_boardpilot_control_parse(const uint8_t *data, uint32_t len) {
     }
     data_buffer_len += cpy_len;
     chunk_recv_len += cpy_len;
-    LOG_ERR("RECV CHUNK (tl: %i, rl: %i, c: %i, cr: %i)", data_header.size, data_buffer_len, data_header.chunk_size, chunk_recv_len);
-    
+
     if (chunk_recv_len >= data_header.chunk_size) {
         // Chunk ended
         chunk_recv_len = 0;
@@ -258,7 +257,6 @@ static void zmk_boardpilot_boardpilot_thread(void *arg, void *unused2, void *unu
 
         // Wait until message is ready
         k_sem_take(&data_parse_sem, K_FOREVER);
-        LOG_ERR("PARSE MESSAGE");
         int err = 0;
 
         // Message ready
@@ -270,7 +268,6 @@ static void zmk_boardpilot_boardpilot_thread(void *arg, void *unused2, void *unu
             err = zmk_boardpilot_set_config(data_buffer, data_header.size);
             break;
         case ZMK_BOARDPILOT_CMD_GET_CONFIG:
-            LOG_ERR("ZMK_boardpilot_GET_CONFIG");
             err = zmk_boardpilot_get_config(data_buffer, data_header.size);
             break;
         case ZMK_BOARDPILOT_CMD_INVALID:
@@ -284,7 +281,6 @@ static void zmk_boardpilot_boardpilot_thread(void *arg, void *unused2, void *unu
             free(data_buffer);
             data_buffer = NULL;
         }
-        LOG_ERR("PARSE COMPLETE");
     }
 }
 
