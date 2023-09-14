@@ -3,12 +3,11 @@
 */
 
 #include <zmk/boardpilot/boardpilot.h>
-#include <device.h>
-#include <devicetree.h>
-#include <logging/log.h>
-#include <drivers/flash.h>
-#include <storage/flash_map.h>
-#include <fs/nvs.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/fs/nvs.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(boardpilot, CONFIG_ZMK_LOG_LEVEL);
@@ -83,12 +82,11 @@ static int zmk_boardpilot_init() {
  *
  * @return Bound field. NULL if failed
  */
-struct zmk_boardpilot_field *zmk_boardpilot_bind(enum zmk_boardpilot_field_key key, void *data,
-                                                 uint16_t size, bool saveable,
-                                                 void (*update_callback)(struct zmk_config_field *),
-                                                 struct device *device) {
+struct zmk_boardpilot_field *
+zmk_boardpilot_bind(enum zmk_boardpilot_field_key key, void *data, uint16_t size, bool saveable,
+                    void (*update_callback)(struct zmk_boardpilot_field *), struct device *device) {
     if (!_bp_initialized) {
-        if (zmk_config_init() < 0) {
+        if (zmk_boardpilot_init() < 0) {
             LOG_ERR("Failed to initialize NVS");
             return NULL;
         }
@@ -114,7 +112,7 @@ struct zmk_boardpilot_field *zmk_boardpilot_bind(enum zmk_boardpilot_field_key k
             // Init mutex lock
             k_mutex_init(&fields[i].mutex);
 
-            err = zmk_config_read(key);
+            err = zmk_boardpilot_read(key);
             if (err < 0) {
                 // Returns error if field does not exist in NVS so this can be ignored for now
             }
@@ -133,8 +131,8 @@ struct zmk_boardpilot_field *zmk_boardpilot_bind(enum zmk_boardpilot_field_key k
  * @param key Key of the field to get
  * @return Field. NULL if not found
  */
-struct zmk_boardpilot_field *zmk_config_get(enum zmk_boardpilot_field_key key) {
-    if (!_config_initialized)
+struct zmk_boardpilot_field *zmk_boardpilot_get(enum zmk_boardpilot_field_key key) {
+    if (!_bp_initialized)
         return NULL;
 
     for (int i = 0; i < CONFIG_ZMK_BOARDPILOT_MAX_FIELDS; i++) {
@@ -163,7 +161,7 @@ int zmk_boardpilot_read(enum zmk_boardpilot_field_key key) {
     // Apply mutex lock
     k_mutex_lock(&field->mutex, K_FOREVER);
     // Update field from NVS
-    len = nvs_read(&fs, (uint16_t)key, _tmp_buffer, CONFIG_ZMK_CONFIG_MAX_FIELD_SIZE);
+    len = nvs_read(&fs, (uint16_t)key, _bp_field_buffer, CONFIG_ZMK_BOARDPILOT_MAX_FIELD_SIZE);
 
     if (len > 0) {
         // Read OK
@@ -185,7 +183,7 @@ int zmk_boardpilot_read(enum zmk_boardpilot_field_key key) {
         }
         return 0;
     } else {
-        field->flags &= ~(ZMK_CONFIG_FIELD_FLAG_READ);
+        field->flags &= ~(ZMK_BOARDPILOT_FIELD_FLAG_READ);
         k_mutex_unlock(&field->mutex);
         return -1;
     }
@@ -215,10 +213,10 @@ int zmk_boardpilot_write(enum zmk_boardpilot_field_key key) {
     if (len < 0) {
         LOG_ERR("failed to write NVS");
         // Clear written flag since it's not written
-        field->flags &= ~(ZMK_CONFIG_FIELD_FLAG_WRITTEN);
+        field->flags &= ~(ZMK_BOARDPILOT_FIELD_FLAG_WRITTEN);
         return -1;
     }
-    field->flags |= ZMK_CONFIG_FIELD_FLAG_READ | ZMK_CONFIG_FIELD_FLAG_WRITTEN;
+    field->flags |= ZMK_BOARDPILOT_FIELD_FLAG_READ | ZMK_BOARDPILOT_FIELD_FLAG_WRITTEN;
 
     return 0;
 }
@@ -263,17 +261,17 @@ const static char *ZMK_BOARDPILOT_DEVICE_ID[] = {
 
 /**
  * @brief Get keymap device name eg. "KEY_PRESS" from id = 6. id is the index of corresponding
- * CONF_ID_DEVICE row
+ * ZMK_BOARDPILOT_DEVICE_ID row
  *
  * @param id
  * @return Corresponding device name to id
  */
 const char *zmk_boardpilot_keymap_device_name(uint8_t id) {
     // Return NULL if not found
-    if ((id & 0x7F) > sizeof(CONF_ID_DEVICE) / sizeof(const char *))
+    if ((id & 0x7F) > sizeof(ZMK_BOARDPILOT_DEVICE_ID) / sizeof(const char *))
         return NULL;
 
-    return CONF_ID_DEVICE[(id & 0x7F)];
+    return ZMK_BOARDPILOT_DEVICE_ID[(id & 0x7F)];
 }
 
 /**
@@ -285,8 +283,8 @@ const char *zmk_boardpilot_keymap_device_name(uint8_t id) {
  */
 int zmk_boardpilot_keymap_device_id(char *device_name) {
 
-    for (int i = 0; i < sizeof(CONF_ID_DEVICE) / sizeof(const char *); i++) {
-        if (strcmp(device_name, CONF_ID_DEVICE[i]) == 0) {
+    for (int i = 0; i < sizeof(ZMK_BOARDPILOT_DEVICE_ID) / sizeof(const char *); i++) {
+        if (strcmp(device_name, ZMK_BOARDPILOT_DEVICE_ID[i]) == 0) {
             return i;
         }
     }
@@ -294,7 +292,7 @@ int zmk_boardpilot_keymap_device_id(char *device_name) {
 }
 
 int zmk_boardpilot_keymap_conf_to_binding(struct zmk_behavior_binding *binding,
-                                          struct zmk_boardpilot_keymap_item *item) {
+                                          struct zmk_boardpilot_binding *item) {
     char *device_name = zmk_boardpilot_keymap_device_name(item->device);
     if (device_name == NULL) {
         return -1;
@@ -308,7 +306,7 @@ int zmk_boardpilot_keymap_conf_to_binding(struct zmk_behavior_binding *binding,
 }
 
 int zmk_boardpilot_keymap_binding_to_conf(struct zmk_behavior_binding *binding,
-                                          struct zmk_boardpilot_keymap_item *item, uint8_t layer,
+                                          struct zmk_boardpilot_binding *item, uint8_t layer,
                                           uint16_t key) {
     int id = zmk_boardpilot_keymap_device_id(binding->behavior_dev);
     if (id < 0) {

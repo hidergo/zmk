@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zmk/behavior.h>
 
 // Flag if this field should be saved to NVS
 #define ZMK_BOARDPILOT_FIELD_FLAG_SAVEABLE BIT(0)
@@ -122,7 +124,7 @@ zmk_boardpilot_bind(enum zmk_boardpilot_field_key key, void *data, uint16_t size
  * @param key Key of the field to get
  * @return Field. NULL if not found
  */
-struct zmk_boardpilot_field *zmk_config_get(enum zmk_boardpilot_field_key key);
+struct zmk_boardpilot_field *zmk_boardpilot_get(enum zmk_boardpilot_field_key key);
 
 /**
  * @brief Read configuration field. This reads the value from the NVS to the field.
@@ -149,15 +151,15 @@ int zmk_boardpilot_write(enum zmk_boardpilot_field_key key);
  * @return 0 on success, -1 on error
  */
 int zmk_boardpilot_keymap_conf_to_binding(struct zmk_behavior_binding *binding,
-                                          struct zmk_boardpilot_keymap_item *item);
+                                          struct zmk_boardpilot_binding *item);
 
 /**
- * @brief Transform zmk_behavior_binding to zmk_boardpilot_keymap_item
+ * @brief Transform zmk_behavior_binding to zmk_boardpilot_binding
  *
  * @param binding
  * @param item
  * @return 0 on success, -1 on error
  */
 int zmk_boardpilot_keymap_binding_to_conf(struct zmk_behavior_binding *binding,
-                                          struct zmk_boardpilot_keymap_item *item, uint8_t layer,
+                                          struct zmk_boardpilot_binding *item, uint8_t layer,
                                           uint16_t key);
