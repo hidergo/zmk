@@ -556,7 +556,7 @@ endif # ZMK_KEYMAP_SENSORS
 menu "BoardPilot"
 
 config ZMK_BOARDPILOT
-    depends on USB
+    depends on ZMK_USB
     depends on ENABLE_HID_INT_OUT_EP
     bool "Enable BoardPilot software interface"
     default n
