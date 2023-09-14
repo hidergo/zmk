@@ -346,7 +346,7 @@ int keymap_listener(const zmk_event_t *eh) {
 void zmk_boardpilot_keymap_updated(struct zmk_boardpilot_field *field) {
 
     // Reset defaults first
-    for (int i = 0; i < CONFIG_ZMK_BOARDPILOT_MAX_REBOUND_KEYS; i++) {
+    for (int i = 0; i < CONFIG_ZMK_BOARDPILOT_MAX_REBINDS; i++) {
         struct zmk_boardpilot_binding *item = &zmk_boardpilot_defaults[i];
 
         if (item->key == 0xFFFF)
@@ -357,7 +357,7 @@ void zmk_boardpilot_keymap_updated(struct zmk_boardpilot_field *field) {
         if (layer >= ZMK_KEYMAP_LAYERS_LEN || key >= ZMK_KEYMAP_LEN)
             continue;
 
-        struct zmk_behavior_binding *bind = &zmk_keymap[layer][i];
+        struct zmk_behavior_binding *bind = &zmk_keymap[layer][key];
         if (zmk_boardpilot_keymap_conf_to_binding(bind, item) < 0) {
             LOG_ERR("Failed to update layer %i key %i: Unknown device id: %i\n", layer, key,
                     item->device);
@@ -367,8 +367,8 @@ void zmk_boardpilot_keymap_updated(struct zmk_boardpilot_field *field) {
     // Reset defaults
     memset(zmk_boardpilot_defaults, 0xFF, sizeof(zmk_boardpilot_defaults));
 
-    for (int i = 0; i < CONFIG_ZMK_BOARDPILOT_MAX_REBOUND_KEYS; i++) {
-        struct zmk_config_keymap_item *item = &zmk_config_keymap[i];
+    for (int i = 0; i < CONFIG_ZMK_BOARDPILOT_MAX_REBINDS; i++) {
+        struct zmk_boardpilot_binding *item = &zmk_boardpilot_rebinds[i];
 
         if (item->key == 0xFFFF)
             continue;
@@ -378,7 +378,7 @@ void zmk_boardpilot_keymap_updated(struct zmk_boardpilot_field *field) {
         if (layer >= ZMK_KEYMAP_LAYERS_LEN || key >= ZMK_KEYMAP_LEN)
             continue;
 
-        struct zmk_behavior_binding *bind = &zmk_keymap[layer][i];
+        struct zmk_behavior_binding *bind = &zmk_keymap[layer][key];
 
         // Save default first
         if (zmk_boardpilot_keymap_binding_to_conf(bind, &zmk_boardpilot_defaults[i], layer, key) <
@@ -406,7 +406,7 @@ static int zmk_boardpilot_keymap_init() {
     }
     // zmk_boardpilot_bind reads existing rebound keys from NVS so
     // update must be triggered to update keymap
-    zmk_keymap_updated(NULL);
+    zmk_boardpilot_keymap_updated(NULL);
     return 0;
 }
 #endif /* IS_ENABLED(CONFIG_ZMK_BOARDPILOT) */
