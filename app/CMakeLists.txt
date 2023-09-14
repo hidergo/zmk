@@ -66,6 +66,7 @@ if ((NOT CONFIG_ZMK_SPLIT) OR CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
   target_sources(app PRIVATE src/events/modifiers_state_changed.c)
   target_sources(app PRIVATE src/events/keycode_state_changed.c)
   target_sources_ifdef(CONFIG_ZMK_BOARDPILOT app PRIVATE src/boardpilot/boardpilot.c)
+  target_sources_ifdef(CONFIG_ZMK_BOARDPILOT app PRIVATE src/boardpilot/boardpilot_control.c)
 
   if (CONFIG_ZMK_BLE)
     target_sources(app PRIVATE src/events/ble_active_profile_changed.c)
